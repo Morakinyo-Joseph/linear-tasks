@@ -11,6 +11,11 @@ class Todo(models.Model):
         OPEN = "open", "Open"
         DONE = "done", "Done"
 
+    class Priority(models.TextChoices):
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+
     public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False, db_index=True)
     organization = models.ForeignKey(
         Organization,
@@ -23,7 +28,14 @@ class Todo(models.Model):
         related_name="todos_created",
     )
     title = models.CharField(max_length=255)
+    # Still declared on the model — migration 0002 drops the DB column (intentional demo bug).
     description = models.TextField(blank=True)
+    priority = models.CharField(
+        max_length=16,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
+        db_index=True,
+    )
     status = models.CharField(
         max_length=16,
         choices=Status.choices,
@@ -39,6 +51,7 @@ class Todo(models.Model):
         indexes = [
             models.Index(fields=["organization", "-created_at"]),
             models.Index(fields=["organization", "status"]),
+            models.Index(fields=["organization", "priority"]),
         ]
 
     def __str__(self) -> str:

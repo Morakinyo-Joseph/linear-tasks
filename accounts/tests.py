@@ -1,3 +1,4 @@
+from django.db import DatabaseError, OperationalError
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -57,88 +58,57 @@ class AuthApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class TodoTenancyTests(TestCase):
+class TodoSchemaDriftTests(TestCase):
+    """Documents the intentional migration 0002 model/DB drift (description)."""
+
     def setUp(self):
-        self.org_a = Organization.objects.create(name="Org A", slug="org-a")
-        self.org_b = Organization.objects.create(name="Org B", slug="org-b")
-        self.user_a = User.objects.create_user(
+        self.org = Organization.objects.create(name="Org A", slug="org-a")
+        self.user = User.objects.create_user(
             email="a@linear.test",
             password="secret12345",
-            organization=self.org_a,
+            organization=self.org,
         )
         Membership.objects.create(
-            user=self.user_a,
-            organization=self.org_a,
+            user=self.user,
+            organization=self.org,
             role=Membership.Role.OWNER,
         )
-        self.user_b = User.objects.create_user(
-            email="b@linear.test",
-            password="secret12345",
-            organization=self.org_b,
+        self.client = APIClient()
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {RefreshToken.for_user(self.user).access_token}"
         )
-        Membership.objects.create(
-            user=self.user_b,
-            organization=self.org_b,
-            role=Membership.Role.OWNER,
-        )
-        self.todo_a = Todo.objects.create(
-            organization=self.org_a,
-            created_by=self.user_a,
-            title="A only",
-        )
-        self.todo_b = Todo.objects.create(
-            organization=self.org_b,
-            created_by=self.user_b,
-            title="B only",
-        )
-        self.client_a = APIClient()
-        self.client_a.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {RefreshToken.for_user(self.user_a).access_token}"
-        )
-        self.client_b = APIClient()
-        self.client_b.credentials(
-            HTTP_AUTHORIZATION=f"Bearer {RefreshToken.for_user(self.user_b).access_token}"
-        )
+
+    def test_orm_select_description_raises(self):
+        with self.assertRaises((OperationalError, DatabaseError)):
+            list(
+                Todo.objects.filter(organization_id=self.org.id).values(
+                    "id", "title", "description"
+                )
+            )
+
+    def test_create_todo_raises_schema_drift(self):
+        with self.assertRaises((OperationalError, DatabaseError)):
+            self.client.post(
+                "/api/v1/todos/",
+                {"title": "Ship API", "description": "Phase 1", "priority": "high"},
+                format="json",
+            )
 
     def test_unauthenticated_todos_401(self):
-        client = APIClient()
-        response = client.get("/api/v1/todos/")
+        response = APIClient().get("/api/v1/todos/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_list_only_own_org(self):
-        response = self.client_a.get("/api/v1/todos/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        ids = {row["id"] for row in response.data["results"]}
-        self.assertIn(str(self.todo_a.public_id), ids)
-        self.assertNotIn(str(self.todo_b.public_id), ids)
 
-    def test_cannot_get_other_org_todo(self):
-        response = self.client_a.get(f"/api/v1/todos/{self.todo_b.public_id}/")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+class DemoErrorEndpointTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
 
-    def test_cannot_patch_other_org_todo(self):
-        response = self.client_a.patch(
-            f"/api/v1/todos/{self.todo_b.public_id}/",
-            {"title": "hacked"},
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.todo_b.refresh_from_db()
-        self.assertEqual(self.todo_b.title, "B only")
+    def test_boom_raises_when_debug(self):
+        with self.settings(DEBUG=True):
+            with self.assertRaises(RuntimeError):
+                self.client.get("/api/v1/demo/boom/")
 
-    def test_cannot_delete_other_org_todo(self):
-        response = self.client_a.delete(f"/api/v1/todos/{self.todo_b.public_id}/")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(Todo.objects.filter(pk=self.todo_b.pk).exists())
-
-    def test_create_and_complete(self):
-        create = self.client_a.post(
-            "/api/v1/todos/",
-            {"title": "Ship API", "description": "Phase 1"},
-            format="json",
-        )
-        self.assertEqual(create.status_code, status.HTTP_201_CREATED)
-        todo_id = create.data["id"]
-        complete = self.client_a.post(f"/api/v1/todos/{todo_id}/complete/")
-        self.assertEqual(complete.status_code, status.HTTP_200_OK)
-        self.assertEqual(complete.data["status"], "done")
+    def test_boom_hidden_when_not_debug(self):
+        with self.settings(DEBUG=False):
+            response = self.client.get("/api/v1/demo/boom/")
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

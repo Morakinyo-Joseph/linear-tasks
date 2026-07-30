@@ -26,6 +26,13 @@ class TodoViewSet(viewsets.ModelViewSet):
         status_param = self.request.query_params.get("status")
         if status_param in {Todo.Status.OPEN, Todo.Status.DONE}:
             qs = qs.filter(status=status_param)
+        priority_param = self.request.query_params.get("priority")
+        if priority_param in {
+            Todo.Priority.LOW,
+            Todo.Priority.MEDIUM,
+            Todo.Priority.HIGH,
+        }:
+            qs = qs.filter(priority=priority_param)
         q = self.request.query_params.get("q")
         if q:
             qs = qs.filter(title__icontains=q.strip())

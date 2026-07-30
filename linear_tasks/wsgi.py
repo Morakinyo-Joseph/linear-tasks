@@ -1,16 +1,18 @@
 """
-WSGI config for linear_tasks project.
+WSGI config for Linear Tasks.
 
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
+Insider is initialized before the Django application is built so
+DjangoIntegration can patch the request handler.
 """
 
 import os
 
-from django.core.wsgi import get_wsgi_application
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "linear_tasks.settings")
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'linear_tasks.settings')
+from linear_tasks.insider_init import init_insider  # noqa: E402
+
+init_insider()
+
+from django.core.wsgi import get_wsgi_application  # noqa: E402
 
 application = get_wsgi_application()

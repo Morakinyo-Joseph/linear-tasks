@@ -27,8 +27,11 @@ SECRET_KEY = env(
 DEBUG = env.bool("DEBUG", default=True)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
 
-# Phase 2: set INSIDER_DSN to beam footprints into StarLink.
+# Phase 2 — Insider SDK (initialized in wsgi.py / asgi.py, not middleware).
 INSIDER_DSN = env("INSIDER_DSN", default="")
+INSIDER_ENVIRONMENT = env("INSIDER_ENVIRONMENT", default="development")
+INSIDER_DEBUG = env.bool("INSIDER_DEBUG", default=False)
+# Leave INSIDER_RELEASE / GIT_SHA unset locally so the SDK uses git HEAD.
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -52,7 +55,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # Phase 2: Insider SDK middleware hooks here.
 ]
 
 ROOT_URLCONF = "linear_tasks.urls"

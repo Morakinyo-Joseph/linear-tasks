@@ -1,16 +1,18 @@
 """
-ASGI config for linear_tasks project.
+ASGI config for Linear Tasks.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
+Insider is initialized before the Django application is built so
+DjangoIntegration can patch the request handler.
 """
 
 import os
 
-from django.core.asgi import get_asgi_application
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "linear_tasks.settings")
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'linear_tasks.settings')
+from linear_tasks.insider_init import init_insider  # noqa: E402
+
+init_insider()
+
+from django.core.asgi import get_asgi_application  # noqa: E402
 
 application = get_asgi_application()

@@ -13,6 +13,7 @@ class TodoSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
+            "priority",
             "status",
             "due_at",
             "created_by_id",
