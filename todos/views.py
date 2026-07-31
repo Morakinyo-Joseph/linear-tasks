@@ -47,6 +47,8 @@ class TodoViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="complete")
     def complete(self, request, public_id=None):
         todo = self.get_object()
+        # Intentional bug: Trigger a server error when this endpoint is hit
+        trigger_error = 1 / 0
         todo.status = Todo.Status.DONE
         todo.save(update_fields=["status", "updated_at"])
         return Response(TodoSerializer(todo).data)
