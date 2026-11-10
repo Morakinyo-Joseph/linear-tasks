@@ -1,9 +1,4 @@
-"""
-Pure helpers for autofix demos.
-
-Intentional bugs live here on purpose: the view/service look plausible;
-the failure is a few frames deeper (more realistic auto-fix target).
-"""
+"""Pure helpers used by the complex demo endpoints."""
 
 from __future__ import annotations
 
@@ -14,32 +9,21 @@ from typing import Any
 PRIORITY_WEIGHTS = {
     "low": 1,
     "medium": 2,
-    # Deliberately omit "high" — board digest KeyErrors on high-priority cards.
 }
 
 
 def format_due_label(due_at: datetime | None) -> str:
-    """
-    Human label for a todo due date.
-
-    BUG: assumes ``due_at`` is always a datetime. Cards with ``due_at=None``
-    raise AttributeError on ``.strftime``.
-    """
+    """Human label for a todo due date."""
     return due_at.strftime("%Y-%m-%d %H:%M")
 
 
 def priority_weight(priority: str) -> int:
-    """Sort weight for a priority string. BUG: missing ``high`` key."""
+    """Sort weight for a priority string."""
     return PRIORITY_WEIGHTS[priority]
 
 
 def parse_todo_ref(raw_id: Any) -> int:
-    """
-    Normalize a client todo id for bulk ops.
-
-    BUG: forces ``int(...)`` even though real todo public ids are UUIDs /
-    opaque strings — ValueError on any realistic payload.
-    """
+    """Normalize a client todo id for bulk ops."""
     return int(raw_id)
 
 
@@ -51,12 +35,7 @@ def assert_can_complete(current_status: str) -> None:
 
 
 def build_notify_payload(todo: dict[str, Any]) -> dict[str, Any]:
-    """
-    Build a Slack-ish preview payload for a todo.
-
-    BUG: always reads ``todo["assignee"]["email"]`` even when assignee is
-    missing / null — TypeError: 'NoneType' object is not subscriptable.
-    """
+    """Build a Slack-ish preview payload for a todo."""
     return {
         "text": f"Reminder: {todo['title']}",
         "blocks": [

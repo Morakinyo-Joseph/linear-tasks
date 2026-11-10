@@ -133,3 +133,52 @@ Demo routes (`/api/v1/demo/*`) return 404 when `DEBUG=False`.
 Feature commit adds todo **`priority`**, but migration `0002_todo_priority_schema_drift` also **drops the `description` DB column** while the Django model/serializer still declare `description`.
 
 After `migrate`, todo create/list raises `OperationalError` (no such column). That error beams into StarLink for blame against the commit that introduced the migration — useful for comparing `release` / git authors.
+
+## Phase 3 — Playbook fixtures
+
+Stable **success-path** HTTP endpoints for Insider Playbook (StarLink). DEBUG only.
+Beams use ``INSIDER_ENVIRONMENT`` from `.env` (typically ``development``).
+
+| Method | Path | Status | Play idea |
+|--------|------|--------|-----------|
+| POST | `/api/v1/demo/playbook/signups/` | 201 | Live signup + templates |
+| POST | `/api/v1/demo/playbook/orders/` | 201 | Exact order placed |
+| POST | `/api/v1/demo/playbook/orders/<id>/fulfill/` | 200 | Prefix under `/orders/` |
+| POST | `/api/v1/demo/playbook/payments/fail/` | 402 | Exact status fail |
+| POST | `/api/v1/demo/playbook/kyc/submit/` | 200 | Batch after N hits |
+| GET | `/api/v1/demo/playbook/ping/` | 200 | Noise (should not match) |
+
+```bash
+# Signup (live Play)
+curl -s -i -X POST http://127.0.0.1:8001/api/v1/demo/playbook/signups/ \
+  -H 'Content-Type: application/json' \
+  -d '{"first_name":"Grace","last_name":"Hopper","email":"grace@linear.test"}'
+
+# Order + fulfill (prefix Play)
+ORDER=$(curl -s -X POST http://127.0.0.1:8001/api/v1/demo/playbook/orders/ \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_name":"Tunde","item":"suya","amount_kobo":250000}')
+echo "$ORDER"
+OID=$(python3 -c "import json,sys; print(json.load(sys.stdin)['order_id'])" <<<"$ORDER")
+curl -s -i -X POST "http://127.0.0.1:8001/api/v1/demo/playbook/orders/$OID/fulfill/" \
+  -H 'Content-Type: application/json' \
+  -d '{"courier":"bike-3"}'
+
+# Payment fail (402)
+curl -s -i -X POST http://127.0.0.1:8001/api/v1/demo/playbook/payments/fail/ \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"payer@linear.test","amount_kobo":99000}'
+
+# KYC x3 (batch Play)
+for i in 1 2 3; do
+  curl -s -X POST http://127.0.0.1:8001/api/v1/demo/playbook/kyc/submit/ \
+    -H 'Content-Type: application/json' \
+    -d "{\"full_name\":\"User $i\",\"document_type\":\"nin\"}"
+  echo
+done
+
+# Noise
+curl -s http://127.0.0.1:8001/api/v1/demo/playbook/ping/
+```
+
+Plays on StarLink must use environment **`development`** (or empty = all), matching `.env`.

@@ -1,9 +1,4 @@
-"""
-Service layer for autofix demos.
-
-Uses canned in-memory cards so DEBUG demos work without auth or DB rows.
-The bugs are still reached through the same call chain a real feature would use.
-"""
+"""Service layer for complex DEBUG demos (in-memory cards, no auth required)."""
 
 from __future__ import annotations
 
@@ -12,8 +7,6 @@ from typing import Any
 
 from . import utils
 
-# Mixed fixtures: null due dates, high priority, null assignee — each path
-# exercises a different intentional utils bug depending on the endpoint.
 _DEMO_CARDS: list[dict[str, Any]] = [
     {
         "id": "11111111-1111-1111-1111-111111111111",
