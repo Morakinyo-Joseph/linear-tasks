@@ -19,7 +19,7 @@ class BoomView(APIView):
     def get(self, request):
         if not settings.DEBUG:
             return JsonResponse({"detail": "Not found."}, status=404)
-        raise RuntimeError("linear-tasks intentional boom for Insider StarLink demo")
+        return JsonResponse({"detail": "boom handled"})
 
 
 class NoticeView(APIView):
