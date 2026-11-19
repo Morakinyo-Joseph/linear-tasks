@@ -22,9 +22,12 @@ def priority_weight(priority: str) -> int:
     return PRIORITY_WEIGHTS[priority]
 
 
-def parse_todo_ref(raw_id: Any) -> int:
+def parse_todo_ref(raw_id: Any) -> Any:
     """Normalize a client todo id for bulk ops."""
-    return int(raw_id)
+    try:
+        return int(raw_id)
+    except (TypeError, ValueError):
+        return str(raw_id)
 
 
 def assert_can_complete(current_status: str) -> None:
