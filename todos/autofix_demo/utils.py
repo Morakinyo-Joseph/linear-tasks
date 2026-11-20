@@ -9,6 +9,7 @@ from typing import Any
 PRIORITY_WEIGHTS = {
     "low": 1,
     "medium": 2,
+    "high": 3,
 }
 
 
