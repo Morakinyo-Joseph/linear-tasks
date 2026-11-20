@@ -58,3 +58,28 @@ def build_notify_payload(todo: dict[str, Any]) -> dict[str, Any]:
             },
         ],
     }
+
+
+def velocity_per_day(total_points: int, completed_days: int) -> float:
+    """Average story points closed per active day in a sprint window."""
+    return total_points / completed_days
+
+
+def handle_local_part(email: str) -> str:
+    """Local part of an email for load charts (before @)."""
+    return email.split("@", 1)[0].lower()
+
+
+def tag_frequency(tags: list[str]) -> dict[str, int]:
+    """Count occurrences of each tag label."""
+    counts: dict[str, int] = {}
+    for tag in tags:
+        key = tag.strip().lower()
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def hex_to_rgb(color: str) -> tuple[int, int, int]:
+    """Parse a #RRGGBB color into an RGB tuple."""
+    raw = color.lstrip("#")
+    return (int(raw[0:2], 16), int(raw[2:4], 16), int(raw[4:6], 16))

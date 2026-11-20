@@ -21,6 +21,69 @@ def _debug_gate():
     return JsonResponse({"detail": "Not found."}, status=404)
 
 
+class SprintVelocityView(APIView):
+    """
+    GET /api/v1/demo/complex/sprint-velocity/?window=empty
+
+    Default window has zero completed days → ZeroDivisionError in utils.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        blocked = _debug_gate()
+        if blocked is not None:
+            return blocked
+
+        ser = serializers.SprintVelocityQuerySerializer(data=request.query_params)
+        ser.is_valid(raise_exception=True)
+        payload = services.build_sprint_velocity(
+            window=ser.validated_data.get("window", "empty"),
+        )
+        return JsonResponse(payload)
+
+
+class AssigneeLoadView(APIView):
+    """
+    GET /api/v1/demo/complex/assignee-load/
+
+    First canned row has email=None → AttributeError in handle_local_part.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        blocked = _debug_gate()
+        if blocked is not None:
+            return blocked
+
+        return JsonResponse(services.build_assignee_load())
+
+
+class TagRollupView(APIView):
+    """
+    POST /api/v1/demo/complex/tag-rollup/
+
+    Body: ``{"tags": "bug,ops"}``. String is passed to tag_frequency (expects list)
+    and non-hex labels hit hex_to_rgb.
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        blocked = _debug_gate()
+        if blocked is not None:
+            return blocked
+
+        ser = serializers.TagRollupSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        payload = services.build_tag_rollup(tags=ser.validated_data["tags"])
+        return JsonResponse(payload)
+
+
 class BoardDigestView(APIView):
     """
     GET /api/v1/demo/complex/board-digest/

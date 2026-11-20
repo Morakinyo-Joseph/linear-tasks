@@ -33,3 +33,20 @@ class NotifyPreviewQuerySerializer(serializers.Serializer):
 
     todo_id = serializers.CharField(max_length=64, required=False)
     # When omitted, the service uses a canned unassigned card (still explodes).
+
+
+class SprintVelocityQuerySerializer(serializers.Serializer):
+    """GET query params for sprint-velocity demo."""
+
+    window = serializers.ChoiceField(
+        choices=("empty", "active"),
+        default="empty",
+        required=False,
+    )
+
+
+class TagRollupSerializer(serializers.Serializer):
+    """POST body for tag-rollup demo."""
+
+    # Intentionally CharField: clients paste "bug,ops" as one string.
+    tags = serializers.CharField(max_length=512, allow_blank=False)

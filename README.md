@@ -117,6 +117,13 @@ curl -s -i http://127.0.0.1:8001/api/v1/demo/boom/
 
 # Manual notice (no raise)
 curl -s http://127.0.0.1:8001/api/v1/demo/notice/
+
+# Multi-layer autofix demos (fresh round — ZeroDivision / AttributeError / TypeError)
+curl -s -i 'http://127.0.0.1:8001/api/v1/demo/complex/sprint-velocity/?window=empty'
+curl -s -i http://127.0.0.1:8001/api/v1/demo/complex/assignee-load/
+curl -s -i -X POST http://127.0.0.1:8001/api/v1/demo/complex/tag-rollup/ \
+  -H 'Content-Type: application/json' \
+  -d '{"tags":"bug,ops,feature"}'
 ```
 
 ### 4. Incidence → GitHub blame recipe

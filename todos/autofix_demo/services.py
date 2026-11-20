@@ -109,3 +109,64 @@ def preview_notify(*, todo_id: str | None = None) -> dict[str, Any]:
 
     payload = utils.build_notify_payload(card)
     return {"todo_id": card["id"], "payload": payload}
+
+
+_SPRINT_WINDOWS: dict[str, dict[str, Any]] = {
+    # Empty sprint — velocity helper divides by completed_days.
+    "empty": {"total_points": 0, "completed_days": 0, "label": "Sprint 0 (empty)"},
+    "active": {"total_points": 34, "completed_days": 5, "label": "Sprint 12"},
+}
+
+
+_LOAD_ROWS: list[dict[str, Any]] = [
+    {"email": None, "open_count": 4, "title": "Unassigned backlog"},
+    {"email": "owner@linear.test", "open_count": 2, "title": "Owner queue"},
+]
+
+
+def build_sprint_velocity(*, window: str = "empty") -> dict[str, Any]:
+    """Roll up story-point velocity for a canned sprint window."""
+    sprint = _SPRINT_WINDOWS.get(window) or _SPRINT_WINDOWS["empty"]
+    rate = utils.velocity_per_day(sprint["total_points"], sprint["completed_days"])
+    return {
+        "window": window,
+        "label": sprint["label"],
+        "total_points": sprint["total_points"],
+        "completed_days": sprint["completed_days"],
+        "points_per_day": rate,
+    }
+
+
+def build_assignee_load() -> dict[str, Any]:
+    """Per-assignee open-work chart for the demo board."""
+    rows = []
+    for row in _LOAD_ROWS:
+        rows.append(
+            {
+                "handle": utils.handle_local_part(row["email"]),
+                "open_count": row["open_count"],
+                "title": row["title"],
+            }
+        )
+    return {"count": len(rows), "rows": rows}
+
+
+def build_tag_rollup(*, tags: Any) -> dict[str, Any]:
+    """
+    Frequency table for client-supplied tags.
+
+    Clients sometimes send a comma-separated string; the helper expects a list.
+    """
+    freq = utils.tag_frequency(tags)
+    colored = []
+    for name, count in freq.items():
+        # Demo palette lookup — missing keys fall through to raw name as color.
+        color = {"bug": "#e11", "ops": "#1a1"}.get(name, name)
+        colored.append(
+            {
+                "tag": name,
+                "count": count,
+                "rgb": utils.hex_to_rgb(color),
+            }
+        )
+    return {"tags": colored, "unique": len(colored)}
