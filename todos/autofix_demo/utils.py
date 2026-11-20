@@ -81,5 +81,9 @@ def tag_frequency(tags: list[str]) -> dict[str, int]:
 
 def hex_to_rgb(color: str) -> tuple[int, int, int]:
     """Parse a #RRGGBB color into an RGB tuple."""
+    if not color:
+        raise ValueError("Color string cannot be empty")
     raw = color.lstrip("#")
+    if len(raw) != 6:
+        raise ValueError(f"Invalid hex color: {color}")
     return (int(raw[0:2], 16), int(raw[2:4], 16), int(raw[4:6], 16))
